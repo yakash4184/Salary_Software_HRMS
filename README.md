@@ -24,7 +24,20 @@ Modern payroll software for **Savitri Balika Inter College, Khutaha Road, Jamuna
 ```bash
 npm install
 cp .env.example .env.local
+npm run db:start
 npm run dev
+```
+
+`npm run dev` now binds to `0.0.0.0`, so other devices on the same Wi-Fi/LAN can open the app with:
+
+```bash
+http://YOUR-COMPUTER-IP:3000
+```
+
+For laptop-only development, use:
+
+```bash
+npm run dev:local
 ```
 
 Update `.env.local` before production:
@@ -45,6 +58,8 @@ For production, prefer `ADMIN_PASSWORD_HASH` and `ACCOUNTANT_PASSWORD_HASH` with
 
 ```bash
 npm run dev
+npm run dev:local
+npm run db:start
 npm run lint
 npm run build
 npm run start
@@ -74,3 +89,4 @@ The app is ready for Vercel or any Node.js host that supports Next.js. Configure
 npm run build
 npm run start
 ```
+# Salary_Software_HRMS

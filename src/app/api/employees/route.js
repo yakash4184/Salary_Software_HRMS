@@ -26,6 +26,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
+    const includePhoto = searchParams.get("includePhoto") === "1";
     const query = { status: status === "Inactive" ? "Inactive" : "Active" };
     if (search) {
         query.$or = [
@@ -36,7 +37,7 @@ export async function GET(request) {
     }
     const employees = await EmployeeModel.find(query).lean();
     employees.sort(compareEmployeeNames);
-    return NextResponse.json({ employees: employees.map(serializeEmployee) });
+    return NextResponse.json({ employees: employees.map((employee) => serializeEmployee(employee, { includePhoto })) });
 }
 export async function POST(request) {
     const { response } = await requirePermission("employees.create");

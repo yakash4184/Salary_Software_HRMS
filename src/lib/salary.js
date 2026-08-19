@@ -95,7 +95,8 @@ export function getClPolicyMessage(month, annualClUsed = 0) {
 export function calculateSalary(input) {
     const baseSalary = Math.max(toNumber(input.baseSalary), 0);
     const workingDays = Math.max(toNumber(input.workingDays), 1);
-    const daysPresent = Math.min(Math.max(toNumber(input.daysPresent), 0), workingDays);
+    const daysPresent = Math.max(toNumber(input.daysPresent), 0);
+    const deductionDaysPresent = Math.min(daysPresent, workingDays);
     const casualLeave = Math.max(toNumber(input.casualLeave), 0);
     const halfCLTaken = Math.max(toNumber(input.halfCLTaken), 0);
     const excessCL = Math.max(toNumber(input.excessCL), 0);
@@ -113,8 +114,8 @@ export function calculateSalary(input) {
     const requestedEquivalentCL = getEquivalentClUsed({ casualLeave, halfCLTaken });
     // clAllowance uses equivalent CL (full + half/2) so half-day leave is counted
     const clAllowance = Math.min(requestedEquivalentCL, monthlyClAllowance, annualClRemaining);
-    // Absent days = raw attendance gap (workingDays - daysPresent)
-    const absentDays = Math.max(workingDays - daysPresent, 0);
+    // Extra present days are allowed for records, but deductions never go below zero.
+    const absentDays = Math.max(workingDays - deductionDaysPresent, 0);
     const perDaySalary = baseSalary / workingDays;
     // Deductible absences: total absent - allowed CL (equiv) - excess CL adjustment - emergency leave.
     const allowedClUsed = Math.min(requestedEquivalentCL, clAllowance);

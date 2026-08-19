@@ -2,6 +2,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   allowedDevOrigins: [
+    "192.168.31.131",
     "192.168.31.134",
     "localhost",
     "*.ngrok-free.dev",
@@ -14,6 +15,19 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "100mb"
     }
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*\\.(png|jpg|jpeg|webp|svg|ico)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable"
+          }
+        ]
+      }
+    ];
   }
 };
 

@@ -8,7 +8,6 @@ import { Card, CardHeader, EmptyState } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { PageHeading } from "@/components/page-heading";
 import { exportEmployeeLedgerExcel } from "@/lib/excel-export";
 import { downloadSampleEmployeeExcel } from "@/lib/excel-import-template";
 import { ANNUAL_CL_ALLOWANCE, MAX_CL_PER_REQUEST, validateClRequest } from "@/lib/salary";
@@ -77,6 +76,8 @@ export function EmployeesClient() {
     const [importing, setImporting] = useState(false);
     const [importResult, setImportResult] = useState(null);
     const importFileRef = useRef(null);
+    const topEmployeeScrollRef = useRef(null);
+    const tableEmployeeScrollRef = useRef(null);
     useEffect(() => {
         loadEmployees();
         fetch("/api/auth/me")
@@ -92,7 +93,7 @@ export function EmployeesClient() {
     }
     async function loadEmployees() {
         setLoading(true);
-        const response = await fetch(`/api/employees?status=${status}`, { cache: "no-store" });
+        const response = await fetch(`/api/employees?status=${status}&includePhoto=1`, { cache: "no-store" });
         const data = response.ok ? await response.json() : { employees: [] };
         setEmployees(data.employees || []);
         setLoading(false);
@@ -314,6 +315,13 @@ export function EmployeesClient() {
         setImportResult(null);
         setImportModalOpen(true);
     }
+    function syncEmployeeTableScroll(source) {
+        const from = source === "top" ? topEmployeeScrollRef.current : tableEmployeeScrollRef.current;
+        const to = source === "top" ? tableEmployeeScrollRef.current : topEmployeeScrollRef.current;
+        if (from && to && to.scrollLeft !== from.scrollLeft) {
+            to.scrollLeft = from.scrollLeft;
+        }
+    }
     async function handleImportUpload() {
         if (!importFile) return;
         setImporting(true);
@@ -346,18 +354,27 @@ export function EmployeesClient() {
     const showEmployeeActions = canEditEmployees || canDeleteEmployees || canViewSalary;
     const showSalaryActions = canEditSalary || canDeleteSalary;
     return (<>
-      <PageHeading title="Employees" description="Teacher and staff records with bank details, salary base, status, and generated employee IDs." action={canCreateEmployees ? <div className="flex items-center gap-2">
+      <div className="mb-5 rounded-xl border border-blue-100 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">Employee Management</p>
+            <h1 className="mt-1 text-2xl font-extrabold text-slate-900 dark:text-slate-50 sm:text-3xl">Employees</h1>
+            <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">Teacher and staff records with salary, bank, status, and employee ID details.</p>
+          </div>
+          {canCreateEmployees ? <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={openImportModal}>
               <Upload className="h-4 w-4"/>
-              Import via Excel
+              Import Excel
             </Button>
             <Button onClick={openCreate}>
               <Plus className="h-4 w-4"/>
               New Employee
             </Button>
-          </div> : null}/>
+          </div> : null}
+        </div>
+      </div>
 
-      <Card>
+      <Card className="overflow-hidden shadow-sm">
         <CardHeader title="Employee Directory" description={`${filteredEmployees.length} visible record${filteredEmployees.length === 1 ? "" : "s"}`} action={<div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"/>
@@ -369,70 +386,81 @@ export function EmployeesClient() {
               </Select>
             </div>}/>
 
-        {filteredEmployees.length === 0 ? (<EmptyState title={loading ? "Loading employees" : "No employees found"} description={loading ? "Please wait while records are loaded." : "Create a teacher or staff profile to begin payroll setup."} action={!loading && canCreateEmployees ? <Button variant="secondary" onClick={openCreate}>Add Employee</Button> : null}/>) : (<div className="emp-table-scroll">
-            <table className="w-full min-w-[1100px] text-left text-sm">
-              <thead className="bg-muted text-xs uppercase text-muted-foreground">
+        {filteredEmployees.length === 0 ? (<EmptyState title={loading ? "Loading employees" : "No employees found"} description={loading ? "Please wait while records are loaded." : "Create a teacher or staff profile to begin payroll setup."} action={!loading && canCreateEmployees ? <Button variant="secondary" onClick={openCreate}>Add Employee</Button> : null}/>) : (<div>
+            <div ref={topEmployeeScrollRef} className="emp-table-scroll emp-table-scroll-top" onScroll={() => syncEmployeeTableScroll("top")}>
+              <div className="h-px min-w-[1240px]"/>
+            </div>
+            <div ref={tableEmployeeScrollRef} className="emp-table-scroll" onScroll={() => syncEmployeeTableScroll("bottom")}>
+            <table className="w-full min-w-[1240px] table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-[22%]"/>
+                <col className="w-[12%]"/>
+                <col className="w-[10%]"/>
+                <col className="w-[10%]"/>
+                <col className="w-[10%]"/>
+                <col className="w-[12%]"/>
+                <col className="w-[10%]"/>
+                {showEmployeeActions ? <col className="w-[14%]"/> : null}
+              </colgroup>
+              <thead className="border-y border-slate-200 bg-slate-100 text-xs uppercase text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
                 <tr>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold" style={{minWidth:200}}>Employee</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold" style={{minWidth:110}}>Role</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold">Phone</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold">Joining</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold">Base Salary</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold" style={{minWidth:120}}>Bank</th>
-                  <th className="whitespace-nowrap px-5 py-3 font-semibold">Status</th>
-                  {showEmployeeActions ? <th className="whitespace-nowrap px-5 py-3 text-right font-semibold" style={{minWidth:290}}>Actions</th> : null}
+                  <th className="px-4 py-3 font-semibold">Employee</th>
+                  <th className="px-4 py-3 font-semibold">Role</th>
+                  <th className="px-4 py-3 font-semibold">Phone</th>
+                  <th className="px-4 py-3 font-semibold">Joining</th>
+                  <th className="px-4 py-3 font-semibold">Salary</th>
+                  <th className="px-4 py-3 font-semibold">Bank</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  {showEmployeeActions ? <th className="px-4 py-3 text-right font-semibold">Actions</th> : null}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
-                {filteredEmployees.map((employee) => (<tr key={employee._id} className="hover:bg-muted/50">
-                    <td className="whitespace-nowrap px-5 py-4">
+              <tbody className="divide-y divide-slate-200 dark:divide-white/10">
+                {filteredEmployees.map((employee) => (<tr key={employee._id} className="bg-white dark:bg-slate-900/40 hover:bg-blue-50/45 dark:hover:bg-white/5">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {employee.photo ? (<img src={employee.photo} alt="" className="emp-photo"/>) : (<div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-sm font-semibold text-primary">
                             {initials(employee.name)}
                           </div>)}
                         <div className="min-w-0">
-                          <p className="truncate font-semibold" style={{maxWidth:140}}>{employee.name}</p>
+                          <p className="truncate font-semibold text-slate-950 dark:text-slate-50">{employee.name}</p>
                           <p className="text-xs text-muted-foreground">{employee.employeeId}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4">
-                      <p>{employee.role}</p>
-                      <p className="truncate text-xs text-muted-foreground" style={{maxWidth:100}}>{employee.department}</p>
+                    <td className="px-4 py-3">
+                      <p className="truncate">{employee.role}</p>
+                      <p className="truncate text-xs text-muted-foreground">{employee.department}</p>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4">{employee.phone}</td>
-                    <td className="whitespace-nowrap px-5 py-4">{formatDate(employee.joiningDate)}</td>
-                    <td className="whitespace-nowrap px-5 py-4 font-semibold">{formatCurrency(employee.baseSalary)}</td>
-                    <td className="whitespace-nowrap px-5 py-4">
-                      <p className="font-medium">{employee.bankDetails.accountNumber}</p>
-                      <p className="text-xs text-muted-foreground">{employee.bankDetails.ifscCode}</p>
+                    <td className="truncate px-4 py-3">{employee.phone || "-"}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{formatDate(employee.joiningDate)}</td>
+                    <td className="whitespace-nowrap px-4 py-3 font-semibold">{formatCurrency(employee.baseSalary)}</td>
+                    <td className="px-4 py-3">
+                      <p className="truncate font-medium">{employee.bankDetails.accountNumber || "-"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{employee.bankDetails.ifscCode || "-"}</p>
                     </td>
-                    <td className="whitespace-nowrap px-5 py-4">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <Badge tone={employee.status === "Active" ? "success" : "neutral"}>{employee.status}</Badge>
                     </td>
-                    {showEmployeeActions ? <td className="whitespace-nowrap px-5 py-4">
-                      <div className="flex flex-nowrap items-center justify-end gap-2">
-                        {canEditEmployees ? <Button variant="danger" size="sm" onClick={() => openEdit(employee)}>
+                    {showEmployeeActions ? <td className="px-4 py-3">
+                      <div className="flex min-w-[150px] items-center justify-end gap-2">
+                        {canEditEmployees ? <Button variant="secondary" size="icon" title="Edit employee" aria-label={`Edit ${employee.name}`} onClick={() => openEdit(employee)}>
                           <Edit3 className="h-4 w-4"/>
-                          Edit
                         </Button> : null}
-                        {canViewSalary ? <Button variant="secondary" size="sm" onClick={() => openSalaryHistory(employee)}>
+                        {canViewSalary ? <Button variant="secondary" size="icon" title="Salary history" aria-label={`${employee.name} salary history`} onClick={() => openSalaryHistory(employee)}>
                           <FileText className="h-4 w-4"/>
-                          Salary History
                         </Button> : null}
-                        {canDeleteEmployees && employee.status === "Active" ? (<Button variant="danger" size="sm" onClick={() => markInactive(employee)}>
+                        {canDeleteEmployees && employee.status === "Active" ? (<Button variant="danger" size="icon" title="Mark inactive" aria-label={`Mark ${employee.name} inactive`} onClick={() => markInactive(employee)}>
                             <UserRoundX className="h-4 w-4"/>
-                            Inactive
                           </Button>) : null}
-                        {canDeleteEmployees && employee.status === "Inactive" ? (<Button variant="danger" size="sm" onClick={() => openDeleteEmployee(employee)}>
+                        {canDeleteEmployees && employee.status === "Inactive" ? (<Button variant="danger" size="icon" title="Delete employee" aria-label={`Delete ${employee.name}`} onClick={() => openDeleteEmployee(employee)}>
                             <Trash2 className="h-4 w-4"/>
-                            Delete
                           </Button>) : null}
                       </div>
                     </td> : null}
                   </tr>))}
               </tbody>
             </table>
+            </div>
           </div>)}
       </Card>
 
@@ -661,7 +689,7 @@ export function EmployeesClient() {
               <Input type="number" min="1" value={salaryEditForm.workingDays} onChange={(event) => setSalaryEditForm({ ...salaryEditForm, workingDays: event.target.value })} required/>
             </Field>
             <Field label="Days Present">
-              <Input type="number" min="0" value={salaryEditForm.daysPresent} onChange={(event) => setSalaryEditForm({ ...salaryEditForm, daysPresent: event.target.value })} required/>
+              <Input type="number" min="0" step="any" value={salaryEditForm.daysPresent} onChange={(event) => setSalaryEditForm({ ...salaryEditForm, daysPresent: event.target.value })} required/>
             </Field>
             <Field label="Casual Leave">
               <Input type="number" min="0" max={MAX_CL_PER_REQUEST} step="1" value={salaryEditForm.casualLeave} onChange={(event) => setSalaryEditForm({ ...salaryEditForm, casualLeave: clampClInput(event.target.value) })}/>

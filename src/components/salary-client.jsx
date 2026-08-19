@@ -629,13 +629,13 @@ export function SalaryClient() {
             <div className="payroll-field-panel">
               <div className="payroll-field-column">
                 <PayrollFieldRow number={1} label="Base Salary" hint="Original salary without deductions">
-                  <Input className="payroll-row-input" type="number" min="0" value={form.baseSalary} onChange={(event) => setForm({ ...form, baseSalary: event.target.value })} required/>
+                  <Input className="payroll-row-input" type="number" min="0" step="any" value={form.baseSalary} onChange={(event) => setForm({ ...form, baseSalary: event.target.value })} required/>
                 </PayrollFieldRow>
                 <PayrollFieldRow number={2} label="Total Working Days">
-                  <Input className="payroll-row-input" type="number" min="1" value={form.workingDays} onChange={(event) => setForm({ ...form, workingDays: event.target.value })} required/>
+                  <Input className="payroll-row-input" type="number" min="1" step="any" value={form.workingDays} onChange={(event) => setForm({ ...form, workingDays: event.target.value })} required/>
                 </PayrollFieldRow>
                 <PayrollFieldRow number={3} label="Days Present">
-                  <Input className="payroll-row-input" type="number" min="0" max={form.workingDays} value={form.daysPresent} onChange={(event) => setForm({ ...form, daysPresent: event.target.value })} required/>
+                  <Input className="payroll-row-input" type="number" min="0" step="any" value={form.daysPresent} onChange={(event) => setForm({ ...form, daysPresent: event.target.value })} required/>
                 </PayrollFieldRow>
                 <PayrollFieldRow number={4} label="Absent Days">
                   <Input className="payroll-row-input" value={String(calculation.absentDays)} readOnly/>
@@ -647,13 +647,13 @@ export function SalaryClient() {
                   <Input className="payroll-row-input" type="number" min="0" step="1" value={form.halfCLTaken} onChange={(event) => handleHalfClChange(event.target.value)}/>
                 </PayrollFieldRow>
                 <PayrollFieldRow number={7} label="Excess Casual Leave" hint="Adjusts absent days; no salary deduction">
-                  <Input className="payroll-row-input" type="number" min="0" value={form.excessCL} onChange={(event) => setForm({ ...form, excessCL: event.target.value })}/>
+                  <Input className="payroll-row-input" type="number" min="0" step="any" value={form.excessCL} onChange={(event) => setForm({ ...form, excessCL: event.target.value })}/>
                 </PayrollFieldRow>
               </div>
 
               <div className="payroll-field-column payroll-field-column-right">
                 <PayrollFieldRow number={8} label="Emergency Leave" hint="No deduction for approved emergency leave">
-                  <Input className="payroll-row-input" type="number" min="0" value={form.emergencyLeave} onChange={(event) => setForm({ ...form, emergencyLeave: event.target.value })}/>
+                  <Input className="payroll-row-input" type="number" min="0" step="any" value={form.emergencyLeave} onChange={(event) => setForm({ ...form, emergencyLeave: event.target.value })}/>
                 </PayrollFieldRow>
                 <PayrollFieldRow number={9} label="Bonus" hint="Enter amount only">
                   <Input className="payroll-row-input no-spinner" type="text" inputMode="numeric" pattern="[0-9]*" placeholder="Enter amount" value={form.bonus} onKeyDown={preventInvalidAmountKey} onWheel={preventNumberStep} onChange={(event) => handleAmountChange("bonus", event.target.value)}/>

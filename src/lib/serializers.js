@@ -1,4 +1,4 @@
-export function serializeEmployee(doc) {
+export function serializeEmployee(doc, options = {}) {
     return {
         _id: String(doc._id),
         name: String(doc.name || ""),
@@ -9,7 +9,7 @@ export function serializeEmployee(doc) {
         phone: String(doc.phone || ""),
         address: String(doc.address || ""),
         joiningDate: String(doc.joiningDate || ""),
-        photo: typeof doc.photo === "string" ? doc.photo : undefined,
+        ...(options.includePhoto ? { photo: typeof doc.photo === "string" ? doc.photo : undefined } : {}),
         bankDetails: {
             accountNumber: String(doc.bankDetails?.accountNumber || ""),
             ifscCode: String(doc.bankDetails?.ifscCode || "")
@@ -20,9 +20,9 @@ export function serializeEmployee(doc) {
         updatedAt: toIso(doc.updatedAt)
     };
 }
-export function serializeSalary(doc) {
+export function serializeSalary(doc, options = {}) {
     const employee = doc.employee && typeof doc.employee === "object" && "_id" in doc.employee
-        ? serializeEmployee(doc.employee)
+        ? serializeEmployee(doc.employee, { includePhoto: options.includeEmployeePhoto })
         : undefined;
     const absenceDeduction = toAmount(doc.absenceDeduction);
     const excessCLDeduction = toAmount(doc.excessCLDeduction);
@@ -84,9 +84,9 @@ export function serializeSalary(doc) {
         updatedAt: toIso(doc.updatedAt)
     };
 }
-export function serializeLedgerEntry(doc) {
+export function serializeLedgerEntry(doc, options = {}) {
     const employee = doc.employee && typeof doc.employee === "object" && "_id" in doc.employee
-        ? serializeEmployee(doc.employee)
+        ? serializeEmployee(doc.employee, { includePhoto: options.includeEmployeePhoto })
         : undefined;
     return {
         _id: String(doc._id),

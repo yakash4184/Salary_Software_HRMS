@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -40,10 +40,10 @@
   --destructive: 0 72% 55%;
   --brand-blue: 225 86% 72%;
   --brand-green: 160 72% 52%;
-  --glass-bg: rgba(255, 255, 255, 0.92);
-  --glass-bg-strong: rgba(255, 255, 255, 0.98);
-  --glass-border: rgba(226, 232, 240, 0.82);
-  --glass-shadow: 0 18px 55px rgba(15, 23, 42, 0.16);
+  --glass-bg: rgba(13, 17, 30, 0.78);
+  --glass-bg-strong: rgba(10, 14, 26, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -57,8 +57,9 @@ html {
 
 body {
   min-height: 100%;
-  background: #ffffff;
+  background: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   letter-spacing: 0;
 }
@@ -73,7 +74,7 @@ body::before {
 }
 
 .dark body::before {
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.80), rgba(255, 255, 255, 0.94));
+  background: linear-gradient(180deg, rgba(13, 17, 30, 0.86), rgba(9, 11, 20, 0.98));
 }
 
 button,
@@ -282,6 +283,57 @@ textarea {
 
 .animate-glow-pulse {
   animation: glow-pulse 2.5s ease-in-out infinite;
+}
+
+/* ── Dashboard Admin Welcome ─────────────────────── */
+
+.admin-quote-marquee {
+  position: relative;
+  width: min(100%, 620px);
+  min-height: 42px;
+  overflow: hidden;
+  color: hsl(var(--foreground));
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 26px;
+  white-space: nowrap;
+}
+
+.admin-quote-marquee span {
+  position: absolute;
+  top: 8px;
+  left: 100%;
+  display: inline-block;
+  min-width: max-content;
+  animation: admin-quote-slide 16s linear infinite;
+}
+
+.admin-quote-marquee:hover span {
+  animation-play-state: paused;
+}
+
+@keyframes admin-quote-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-100% - 660px));
+  }
+}
+
+@media (max-width: 1023px) {
+  .admin-quote-marquee {
+    width: 100%;
+  }
+
+  @keyframes admin-quote-slide {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - 100vw));
+    }
+  }
 }
 
 .glass-card {
@@ -896,23 +948,43 @@ textarea {
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   isolation: isolate;
+  scrollbar-color: rgba(37, 99, 235, 0.35) rgba(219, 234, 254, 0.85);
+  scrollbar-width: thin;
+  transition: padding 0.18s ease;
+}
+
+.emp-table-scroll:hover {
+  scrollbar-color: rgba(37, 99, 235, 0.65) rgba(219, 234, 254, 0.95);
+}
+
+.emp-table-scroll-top {
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 7px 16px 3px;
+  background: #ffffff;
 }
 
 .emp-table-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 10px;
+}
+
+.emp-table-scroll:hover::-webkit-scrollbar {
+  height: 15px;
 }
 
 .emp-table-scroll::-webkit-scrollbar-track {
-  background: transparent;
+  border-radius: 999px;
+  background: rgba(219, 234, 254, 0.85);
 }
 
 .emp-table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.18);
+  min-width: 80px;
+  border: 2px solid rgba(219, 234, 254, 0.85);
+  background: rgba(37, 99, 235, 0.40);
   border-radius: 999px;
 }
 
 .emp-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.35);
+  background: rgba(37, 99, 235, 0.68);
 }
 
 .emp-photo {

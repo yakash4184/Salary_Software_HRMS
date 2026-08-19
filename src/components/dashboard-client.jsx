@@ -1,38 +1,70 @@
 "use client";
 import { motion, useMotionValue, useTransform, useSpring, AnimatePresence } from "framer-motion";
-import { Banknote, CalendarClock, CheckCircle2, IndianRupee, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Banknote, CalendarClock, Camera, CheckCircle2, IndianRupee, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, EmptyState } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { PageHeading } from "@/components/page-heading";
+import { useToast } from "@/components/ui/toast";
 import { formatCurrency, monthName } from "@/lib/utils";
 export function DashboardClient() {
+    const { notify } = useToast();
     const [employees, setEmployees] = useState([]);
     const [salaries, setSalaries] = useState([]);
+    const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [salaryPeriod, setSalaryPeriod] = useState("Month");
     const [salaryMonth, setSalaryMonth] = useState(String(new Date().getMonth() + 1));
     const [salaryYear, setSalaryYear] = useState(String(new Date().getFullYear()));
+    const profilePhotoRef = useRef(null);
     useEffect(() => {
         async function load() {
             setLoading(true);
-            const [employeeResponse, salaryResponse] = await Promise.all([
+            const [employeeResponse, salaryResponse, userResponse] = await Promise.all([
                 fetch("/api/employees", { cache: "no-store" }),
-                fetch("/api/salaries", { cache: "no-store" })
+                fetch("/api/salaries", { cache: "no-store" }),
+                fetch("/api/auth/me", { cache: "no-store" })
             ]);
-            const [employeeData, salaryData] = await Promise.all([
+            const [employeeData, salaryData, userData] = await Promise.all([
                 employeeResponse.ok ? employeeResponse.json() : { employees: [] },
-                salaryResponse.ok ? salaryResponse.json() : { salaries: [] }
+                salaryResponse.ok ? salaryResponse.json() : { salaries: [] },
+                userResponse.ok ? userResponse.json() : { user: null }
             ]);
             setEmployees(employeeData.employees || []);
             setSalaries(salaryData.salaries || []);
+            setCurrentUser(userData.user || null);
             setLoading(false);
         }
         load();
     }, []);
+    async function changeProfilePhoto(event) {
+        const file = event.target.files?.[0];
+        if (!file)
+            return;
+        try {
+            const photo = await resizeProfileImage(file);
+            const response = await fetch("/api/auth/profile", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ photo })
+            });
+            const data = await response.json().catch(() => null);
+            if (response.ok) {
+                setCurrentUser((user) => ({ ...user, profilePhoto: photo }));
+                notify({ tone: "success", title: "फोटो सफलतापूर्वक लग गई।" });
+            }
+            else {
+                notify({ tone: "error", title: data?.message || "फोटो सेव नहीं हो पाई।" });
+            }
+        }
+        catch {
+            notify({ tone: "error", title: "कृपया सही फोटो चुनें।" });
+        }
+        event.target.value = "";
+    }
     const availableYears = useMemo(() => {
         const years = new Set([new Date().getFullYear()]);
         salaries.forEach((salary) => years.add(salary.year));
@@ -67,6 +99,7 @@ export function DashboardClient() {
     }, [filteredSalaries]);
     const highestSalary = salaryRows.at(-1);
     const maxSalary = Math.max(...salaryRows.map((salary) => salary.netSalary), 0);
+    const adminName = currentUser?.name || "School Administrator";
     return (<>
       <GreetingClock />
       <PageHeading title="Dashboard" description="A controlled view of employee payroll, pending salary runs, and recent slips for Savitri Balika Inter College." action={<Link href="/salary">
@@ -75,6 +108,30 @@ export function DashboardClient() {
               Generate Salary
             </Button>
           </Link>}/>
+
+      <section className="mb-6 overflow-hidden rounded-xl border border-blue-100 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
+            <div className="relative shrink-0">
+              {currentUser?.profilePhoto ? (<img src={currentUser.profilePhoto} alt="" className="h-20 w-20 rounded-full border-4 border-white dark:border-slate-800 object-cover shadow-md ring-2 ring-blue-200 dark:ring-blue-900/50"/>) : (<div className="grid h-20 w-20 rounded-full border-4 border-white dark:border-slate-800 bg-blue-50 dark:bg-slate-800 text-xl font-bold text-blue-700 dark:text-blue-400 shadow-md ring-2 ring-blue-200 dark:ring-blue-900/50">
+                  <span className="m-auto">{adminName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                </div>)}
+              <button type="button" onClick={() => profilePhotoRef.current?.click()} className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full border border-blue-200 bg-blue-600 text-white shadow-sm transition hover:scale-105 hover:bg-blue-700 dark:border-blue-800 dark:bg-blue-500" aria-label="Change admin photo">
+                <Camera className="h-4 w-4"/>
+              </button>
+              <input ref={profilePhotoRef} className="sr-only" type="file" accept="image/*" onChange={changeProfilePhoto}/>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">Administrative Login</p>
+              <h2 className="truncate text-2xl font-extrabold text-slate-950 dark:text-slate-50">Welcome, {adminName}</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">आपका डैशबोर्ड उपयोग के लिए तैयार है।</p>
+            </div>
+          </div>
+          <div className="admin-quote-marquee rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-slate-800/40">
+            <span>{adminName} जी, आपका स्वागत है। शिक्षा, अनुशासन और ईमानदार कार्य से ही संस्थान की प्रगति होती है।</span>
+          </div>
+        </div>
+      </section>
 
       <section className="glass-panel relative mb-8 flex flex-col gap-6 overflow-hidden rounded-2xl border border-white/20 p-6 shadow-xl sm:flex-row sm:items-center sm:justify-between">
         <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-[80px]" />
@@ -238,6 +295,39 @@ function StatusBar({ label, value, total, tone }) {
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${percent}%` }}/>
       </div>
     </div>);
+}
+
+function resizeProfileImage(file) {
+    return new Promise((resolve, reject) => {
+        if (!file.type.startsWith("image/")) {
+            reject(new Error("Invalid image"));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Image read failed"));
+        reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => reject(new Error("Image load failed"));
+            image.onload = () => {
+                const size = 360;
+                const canvas = document.createElement("canvas");
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext("2d");
+                if (!context) {
+                    reject(new Error("Canvas failed"));
+                    return;
+                }
+                const scale = Math.max(size / image.width, size / image.height);
+                const width = image.width * scale;
+                const height = image.height * scale;
+                context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+                resolve(canvas.toDataURL("image/jpeg", 0.86));
+            };
+            image.src = String(reader.result);
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 function TiltPhoto({ images, alt }) {
